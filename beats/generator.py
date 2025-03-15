@@ -35,33 +35,65 @@ def generate_polytonal_section(duration, base_freq, start_beat, end_beat, sample
 
     return np.stack([left, right], axis=-1)
 
-def generate_soothing_overlay_section(duration_sec, sample_rate=44100, pulse_count=120, base_freq=440, spread_range=15):
+def generate_soothing_overlay_section(duration_sec, sample_rate=44100, pulse_count=200, base_freq=432, spread_range=12):
     total_samples = int(duration_sec * sample_rate)
-    track = np.zeros((total_samples, 2))  # Start with silence
+    track = np.zeros((total_samples, 2))
 
     for _ in range(pulse_count):
-        # Random pulse duration (0.2 to 2.5 sec)
-        pulse_dur = np.random.uniform(0.2, 2.5)
+        pulse_dur = np.random.uniform(1.5, 4.0)  # Longer, smoother pulses
         pulse_samples = int(pulse_dur * sample_rate)
-
-        # Random start time
         start = np.random.randint(0, total_samples - pulse_samples)
 
-        # Random modulation around base frequency
-        left_freq = base_freq + np.random.uniform(-spread_range, spread_range)
-        right_freq = base_freq + np.random.uniform(-spread_range, spread_range)
+        # Choose gentle musical interval base tones
+        base_choices = [174, 210, 285, 396, 432, 528, 639]
+        base_freq = np.random.choice(base_choices)
+
+        # Subtle binaural offset
+        beat_freq = np.random.uniform(4.0, 8.0)
+        left_freq = base_freq
+        right_freq = base_freq + beat_freq
 
         t = np.linspace(0, pulse_dur, pulse_samples, endpoint=False)
-        fade = np.linspace(0, 1, pulse_samples // 10)
-        envelope = np.concatenate([fade, np.ones(pulse_samples - 2*len(fade)), fade[::-1]]) if len(fade)*2 < pulse_samples else np.ones(pulse_samples)
+
+        fade_len = pulse_samples // 6
+        fade = np.linspace(0, 1, fade_len)
+        envelope = np.concatenate([fade, np.ones(pulse_samples - 2*fade_len), fade[::-1]])
 
         left = envelope * np.sin(2 * np.pi * left_freq * t)
         right = envelope * np.sin(2 * np.pi * right_freq * t)
 
-        # Mix into track
         track[start:start + pulse_samples, 0] += left
         track[start:start + pulse_samples, 1] += right
 
-    # Normalize
-    track = track / np.max(np.abs(track)) * 0.6  # Keep it soft
+    # Normalize gently
+    track = track / np.max(np.abs(track)) * 0.5
+    return track
+
+def generate_ambient_background_layer(duration_sec, sample_rate=44100, tone_count=30, base_tones=[174, 285, 396, 432, 528, 639], amplitude=0.3):
+    total_samples = int(duration_sec * sample_rate)
+    track = np.zeros((total_samples, 2))
+
+    for _ in range(tone_count):
+        tone_dur = np.random.uniform(10.0, 30.0)  # Long ambient pads
+        fade_dur = tone_dur * 0.3
+        tone_samples = int(tone_dur * sample_rate)
+        fade_samples = int(fade_dur * sample_rate)
+        start = np.random.randint(0, total_samples - tone_samples)
+
+        freq = np.random.choice(base_tones)
+        t = np.linspace(0, tone_dur, tone_samples, endpoint=False)
+
+        # Fade in/out envelope
+        fade = np.linspace(0, 1, fade_samples)
+        sustain = np.ones(tone_samples - 2 * fade_samples)
+        envelope = np.concatenate([fade, sustain, fade[::-1]])
+
+        # Stereo slight spread (optional phase difference for depth)
+        left = envelope * np.sin(2 * np.pi * freq * t)
+        right = envelope * np.sin(2 * np.pi * freq * t + np.pi / 6)
+
+        track[start:start + tone_samples, 0] += left
+        track[start:start + tone_samples, 1] += right
+
+    track = track / np.max(np.abs(track)) * amplitude
     return track

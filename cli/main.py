@@ -8,7 +8,7 @@ from scipy.io.wavfile import write
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import generators and utilities
-from beats.generator import generate_monotone_section, generate_polytonal_section, generate_soothing_overlay_section
+from beats.generator import generate_monotone_section, generate_polytonal_section, generate_soothing_overlay_section, generate_ambient_background_layer
 from beats.ambient_mixer import mix_with_ambient
 from beats.utils import crossfade_tracks
 
@@ -40,6 +40,12 @@ def main():
             base_freq=base_freq,
             sample_rate=sample_rate
         )
+        background_layer = generate_ambient_background_layer(
+            duration_sec=args.duration,
+            sample_rate=sample_rate,
+            tone_count=40,  # Try 30-50 for soft density
+        )
+        section1 += background_layer  # Layer ambient tones
         section2 = None
 
     if section2 is not None:

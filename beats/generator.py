@@ -69,12 +69,19 @@ def generate_soothing_overlay_section(duration_sec, sample_rate=44100, pulse_cou
     track = track / np.max(np.abs(track)) * 0.5
     return track
 
-def generate_ambient_background_layer(duration_sec, sample_rate=44100, tone_count=30, base_tones=[174, 285, 396, 432, 528, 639], amplitude=0.3):
+def generate_ambient_background_layer(
+    duration_sec,
+    sample_rate=44100,
+    tone_count=30,
+    base_tones=[174, 285, 396, 432, 528, 639],
+    amplitude=0.3,
+    phase_spread=0.3
+):
     total_samples = int(duration_sec * sample_rate)
     track = np.zeros((total_samples, 2))
 
     for _ in range(tone_count):
-        tone_dur = np.random.uniform(10.0, 30.0)  # Long ambient pads
+        tone_dur = np.random.uniform(10.0, 30.0)  # Long ambient tones
         fade_dur = tone_dur * 0.3
         tone_samples = int(tone_dur * sample_rate)
         fade_samples = int(fade_dur * sample_rate)
@@ -83,17 +90,16 @@ def generate_ambient_background_layer(duration_sec, sample_rate=44100, tone_coun
         freq = np.random.choice(base_tones)
         t = np.linspace(0, tone_dur, tone_samples, endpoint=False)
 
-        # Fade in/out envelope
         fade = np.linspace(0, 1, fade_samples)
         sustain = np.ones(tone_samples - 2 * fade_samples)
         envelope = np.concatenate([fade, sustain, fade[::-1]])
 
-        # Stereo slight spread (optional phase difference for depth)
         left = envelope * np.sin(2 * np.pi * freq * t)
-        right = envelope * np.sin(2 * np.pi * freq * t + np.pi / 6)
+        right = envelope * np.sin(2 * np.pi * freq * t + phase_spread)
 
         track[start:start + tone_samples, 0] += left
         track[start:start + tone_samples, 1] += right
 
     track = track / np.max(np.abs(track)) * amplitude
     return track
+

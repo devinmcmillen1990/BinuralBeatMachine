@@ -19,6 +19,10 @@ def main():
     parser.add_argument("--ambient", type=str, help="Path to ambient WAV file")
     parser.add_argument("--output", type=str, default="output/binural-beat.wav", help="Path to save final output WAV")
     parser.add_argument("--style", choices=["monotonal", "polytonal", "soothing-poly"], default="monotonal", help="Beat generation style (default: monotonal)")
+    parser.add_argument("--ambient-layer", action="store_true", help="Enable ambient harmonic background layer")
+    parser.add_argument("--ambient-tone-count", type=int, default=40, help="Number of ambient tones to layer (default: 40)")
+    parser.add_argument("--ambient-phase-spread", type=float, default=0.3, help="Stereo phase spread for ambient layer (radians, default: 0.3)")
+
 
     args = parser.parse_args()
 
@@ -43,9 +47,10 @@ def main():
         background_layer = generate_ambient_background_layer(
             duration_sec=args.duration,
             sample_rate=sample_rate,
-            tone_count=40,  # Try 30-50 for soft density
+            tone_count=args.ambient_tone_count,
+            phase_spread=args.ambient_phase_spread
         )
-        section1 += background_layer  # Layer ambient tones
+        section1 += background_layer
         section2 = None
 
     if section2 is not None:

@@ -34,3 +34,34 @@ def generate_polytonal_section(duration, base_freq, start_beat, end_beat, sample
     right = np.sin(2 * np.pi * (base_freq + dynamic_beat_freqs) * t)
 
     return np.stack([left, right], axis=-1)
+
+def generate_soothing_overlay_section(duration_sec, sample_rate=44100, pulse_count=120, base_freq=440, spread_range=15):
+    total_samples = int(duration_sec * sample_rate)
+    track = np.zeros((total_samples, 2))  # Start with silence
+
+    for _ in range(pulse_count):
+        # Random pulse duration (0.2 to 2.5 sec)
+        pulse_dur = np.random.uniform(0.2, 2.5)
+        pulse_samples = int(pulse_dur * sample_rate)
+
+        # Random start time
+        start = np.random.randint(0, total_samples - pulse_samples)
+
+        # Random modulation around base frequency
+        left_freq = base_freq + np.random.uniform(-spread_range, spread_range)
+        right_freq = base_freq + np.random.uniform(-spread_range, spread_range)
+
+        t = np.linspace(0, pulse_dur, pulse_samples, endpoint=False)
+        fade = np.linspace(0, 1, pulse_samples // 10)
+        envelope = np.concatenate([fade, np.ones(pulse_samples - 2*len(fade)), fade[::-1]]) if len(fade)*2 < pulse_samples else np.ones(pulse_samples)
+
+        left = envelope * np.sin(2 * np.pi * left_freq * t)
+        right = envelope * np.sin(2 * np.pi * right_freq * t)
+
+        # Mix into track
+        track[start:start + pulse_samples, 0] += left
+        track[start:start + pulse_samples, 1] += right
+
+    # Normalize
+    track = track / np.max(np.abs(track)) * 0.6  # Keep it soft
+    return track
